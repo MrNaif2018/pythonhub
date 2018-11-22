@@ -1,0 +1,13 @@
+#python hub folders
+apps
+downloads
+index
+python
+repos
+#other code
+api.py
+#Installers, source of Windows-Install.exe included
+Linux_Install.sh
+OSX_Install.sh
+Windows_Install.ps1
+Windows-Install.exe
