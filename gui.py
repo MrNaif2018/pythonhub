@@ -22,7 +22,7 @@ except ImportError:
 ROOT=os.path.dirname(__file__)
 if ROOT:
     os.chdir(ROOT)
-PYTHON="\""+os.path.join(ROOT,"python/python.exe")+"\""
+PYTHON="\""+os.path.join(ROOT,"winpython/python-3.7.1/python.exe")+"\""
 PIP=PYTHON+" -m pip"
 
 if not os.path.exists(os.path.join(ROOT,"downloads")):
