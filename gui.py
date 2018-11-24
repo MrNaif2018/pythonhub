@@ -1,8 +1,9 @@
 # *-* coding: utf-8 *-8
 #pylint: disable=E0611
-from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem,QApplication,QMainWindow,QPushButton,QMessageBox
+from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem,QApplication,QMainWindow,QPushButton,QMessageBox,QMainWindow
 from PyQt5.QtGui import QIcon
 from PyQt5 import uic,QtCore
+from PyQt5.QtCore import pyqtSlot,pyqtSignal
 import requests
 import sys
 import os
@@ -12,6 +13,7 @@ import configparser
 import subprocess
 import platform
 import traceback
+import threading
 try:
     import ujson as json
 except ImportError:
@@ -58,7 +60,6 @@ if len(sys.argv) >= 2:
 
 app = QApplication(sys.argv)
 window=uic.loadUi(os.path.join(ROOT,"mainwindow.ui"))
-
 class CacheStorage:
     def __init__(self,cache_dir):
         self.cache_dir=cache_dir
@@ -95,13 +96,16 @@ def download(name,version,system):
     install(name)
 
 def run(name):
+    while sig.block:
+        pass
     parser.read_file(open(os.path.join(ROOT,"repos/"+name+"/config.cfg")))
     e=parser.get("exec","main",fallback="")
     n=parser.get("app","friendlyname",fallback=name)
     c=parser.get("app","company",fallback="Unknown company")
     process=subprocess.Popen(PYTHON.replace("python.exe","pythonw.exe")+" \""+os.path.join(ROOT,"repos/"+name+"/"+e)+"\"",stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     out,err=process.communicate()
-    info(n+" from company "+c+" executed succesfully! See output in details.","Exec info",details="Ran:\n"+n+" from company "+c+"\nOutput:\n"+out+"\nErrors:\n"+err)
+    sig.block=True
+    sig.info.emit(n+" from company "+c+" executed succesfully! See output in details.","Exec info","","Ran:\n"+n+" from company "+c+"\nOutput:\n"+out+"\nErrors:\n"+err)
 
 def install(name):
     parser.read_file(open(os.path.join(ROOT,"repos/"+name+"/config.cfg")))
@@ -123,8 +127,9 @@ def update_data(w):
         data
     except:
         data=[]
-    update_rows(w,data)
-    
+    sig.rows.emit(w,data)
+
+@pyqtSlot(QTableWidget,list)    
 def update_rows(w,data):
     repos=get_installed_repos()
     w.setRowCount(len(data))
@@ -144,12 +149,7 @@ def update_rows(w,data):
 def get_installed_repos():
     return os.listdir(os.path.join(ROOT,"repos"))
 
-update_data(window.ls)
-
-icon = QIcon(os.path.join(ROOT,"qt.png"))
-app.setWindowIcon(icon)
-window.show()
-
+@pyqtSlot(str,str,str,str)
 def info(text,title,info=None,details=None):
     msg = QMessageBox(window)
     msg.setIcon(QMessageBox.Information)
@@ -160,6 +160,31 @@ def info(text,title,info=None,details=None):
     if details:
         msg.setDetailedText(details)
     msg.exec_()
+    sig.block=False
+
+class SignalsProvider(QtCore.QObject):
+    rows=pyqtSignal(QTableWidget,list) 
+    info=pyqtSignal(str,str,str,str) 
+    def __init__(self):
+        super().__init__()
+        self.rows.connect(update_rows)
+        self.info.connect(info)
+        self.block=False
+
+sig=SignalsProvider()
+
+update_data(window.ls)
+
+
+icon = QIcon(os.path.join(ROOT,"qt.png"))
+app.setWindowIcon(icon)
+window.show()
+
+def _d_bunch(w):
+    threading.Thread(target=download_bunch,args=(w,)).start()
+
+def _r_bunch(w):
+    threading.Thread(target=run_bunch,args=(w,)).start()
 
 def download_bunch(w):
     repos=get_installed_repos()
@@ -179,8 +204,8 @@ def run_bunch(w):
             name=w.item(i,1).text()
             if name in repos:
                 run(name)
-
+            
 window.actionabout.triggered.connect(lambda:info("Python hub v1.0 © Naif Studios","About Python hub","Python hub allows you to install and use lots of Python apps in one click."))
-window.actionRun.triggered.connect(lambda:run_bunch(window.ls))
-window.actionDownload.triggered.connect(lambda:download_bunch(window.ls))
+window.actionRun.triggered.connect(lambda:_r_bunch(window.ls))
+window.actionDownload.triggered.connect(lambda:_d_bunch(window.ls))
 app.exec_()
