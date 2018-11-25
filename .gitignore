@@ -5,9 +5,13 @@ index
 python
 winpython
 repos
+build 
+dist
+__pycache__
 #other code
 api.py
 #Installers, source of Windows-Install.exe included
+Windows-Install.spec
 Linux_Install.sh
 OSX_Install.sh
 Windows_Install.ps1
