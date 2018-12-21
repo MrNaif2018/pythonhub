@@ -106,7 +106,9 @@ def run(name):
     e=parser.get("exec","main",fallback="")
     n=parser.get("app","friendlyname",fallback=name)
     c=parser.get("app","company",fallback="Unknown company")
-    process=subprocess.Popen(PYTHON.replace("python.exe","pythonw.exe")+" \""+os.path.join(ROOT,"repos/"+name+"/"+e)+"\"",stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
+    print(PYTHON.replace("python.exe","pythonw.exe")+" \""+os.path.join(ROOT,"repos/"+name+"/"+e)+"\"")
+    print([PYTHON.replace("python.exe","pythonw.exe"),"\""+os.path.join(ROOT,"repos/"+name+"/"+e)+"\""])
+    process=subprocess.Popen([PYTHON.replace("python.exe","pythonw.exe"),os.path.join(ROOT,"repos/"+name+"/"+e)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     out,err=process.communicate()
     sig.block=True
     sig.info.emit(n+" from company "+c+" executed succesfully! See output in details.","Exec info","","Ran:\n"+n+" from company "+c+"\nOutput:\n"+out+"\nErrors:\n"+err)
