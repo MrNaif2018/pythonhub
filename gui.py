@@ -36,8 +36,12 @@ parser=configparser.ConfigParser()
 
 def extract(file,path="."):
     mime=magic.from_file(file,mime=True).split("/")[-1]
-    if mime == "x-gzip":
+    #tar.gz
+    if mime == "x-gzip" or mime == "gzip":
         mime="gztar"
+    #tar
+    if mime == "x-tar":
+        mime="tar"
     shutil.unpack_archive(file,path,mime)
 
 def compress(path,file):
